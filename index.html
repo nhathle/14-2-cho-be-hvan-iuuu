@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For Hải cá iuuu - Valentine 14/2</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        body { 
+            margin: 0; overflow: hidden; background-color: #050505; 
+            font-family: 'Montserrat', sans-serif; user-select: none;
+            cursor: pointer; /* Cho biết có thể click mọi nơi */
+        }
+        
+        /* --- BACKGROUND --- */
+        #background-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
+            background: radial-gradient(circle at center, #9c4b75 0%, #5e2240 45%, #1f0814 100%);
+        }
+        #noise-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
+            opacity: 0.05; pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+        #stars-canvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none;
+        }
+
+        /* --- UI & TEXT --- */
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 20; pointer-events: none;
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 50px 0 40px 0;
+        }
+        h1 { 
+            color: #ffffff; font-size: 32px; font-weight: 800; 
+            text-transform: uppercase; letter-spacing: 6px; margin: 0; 
+            text-shadow: 0 0 15px rgba(255, 105, 180, 0.8);
+            transition: opacity 1s ease;
+        }
+        .guide-container { margin-bottom: 80px; text-align: center; }
+        .guide-text { 
+            color: #ffcae5; font-size: 16px; font-weight: 400; font-style: italic; 
+            text-shadow: 0 0 8px rgba(255, 105, 180, 0.6);
+            transition: all 0.5s ease;
+        }
+        .highlight { color: #ffffff; font-weight: 600; }
+        .click-hint {
+            display: block; margin-top: 8px; font-size: 12px; color: rgba(255,255,255,0.6);
+            animation: pulse 2s infinite; font-style: normal;
+        }
+
+        /* --- MAIN CONTENT & IMAGES --- */
+        #content-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .stage-element {
+            position: absolute;
+            max-width: 80%; max-height: 70vh;
+            object-fit: contain;
+            opacity: 0; visibility: hidden;
+            transform: scale(0.9) translateY(20px);
+            filter: blur(10px);
+            transition: all 1.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+            animation: float 6s ease-in-out infinite;
+        }
+        .stage-element.active {
+            opacity: 1; visibility: visible;
+            transform: scale(1) translateY(0);
+            filter: blur(0px);
+        }
+        .stage-element.letter {
+            transform: scale(0.8) translateY(100px);
+        }
+        .stage-element.letter.active {
+            transform: scale(1) translateY(0);
+        }
+
+        /* --- SLIDESHOW --- */
+        #slideshow-container {
+            position: absolute; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; visibility: hidden; transition: all 1.5s ease;
+        }
+        #slideshow-container.active { opacity: 1; visibility: visible; }
+        .slide-img {
+            position: absolute; max-width: 75%; max-height: 65vh;
+            border: 8px solid white; border-bottom: 30px solid white; /* Tạo viền Polaroid */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            opacity: 0; transform: scale(0.95) rotate(-2deg);
+            transition: all 1s ease;
+        }
+        .slide-img.active { opacity: 1; transform: scale(1) rotate(0deg); z-index: 2; }
+        .slide-img.prev { opacity: 0; transform: scale(1.05) rotate(2deg); z-index: 1; }
+
+        /* --- VISUALIZER --- */
+        #visualizer-canvas {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; z-index: 15; pointer-events: none; opacity: 0.7;
+        }
+
+        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-15px); } 100% { transform: translateY(0px); } }
+    </style>
+</head>
+<body>
+    <div id="background-layer"></div>
+    <div id="noise-overlay"></div>
+    <canvas id="stars-canvas"></canvas>
+    <canvas id="visualizer-canvas"></canvas>
+
+    <div id="ui-layer">
+        <h1 id="main-title">FOR HẢI CÁ IUUU</h1>
+        <div class="guide-container">
+            <span class="guide-text" id="guide-text">Chúc embe nhà anh có một mùa Valentine hạnh phúc bên tiểu mặt trời ✨</span>
+            <span class="click-hint">(Click chuột vào bất kỳ đâu để bắt đầu)</span>
+        </div>
+    </div>
+
+    <div id="content-container">
+        <img id="stage-fox" src="./target.jpg" class="stage-element active">
+        <img id="stage-pen" src="./target2.jpg" class="stage-element">
+        <img id="stage-letter" src="./mess.png" class="stage-element letter">
+        
+        <div id="slideshow-container">
+            <img src="./1.png" class="slide-img active">
+            <img src="./2.png" class="slide-img">
+            <img src="./3.png" class="slide-img">
+            <img src="./4.png" class="slide-img">
+            <img src="./5.png" class="slide-img">
+            <img src="./6.png" class="slide-img">
+        </div>
+    </div>
+
+    <audio id="audio-bg" src="./audio.mp3"></audio>
+
+    <script>
+        // ----------------------------------------------------
+        // 1. QUẢN LÝ TRẠNG THÁI & CHUYỂN CẢNH (STATE MACHINE)
+        // ----------------------------------------------------
+        let currentState = 0;
+        const totalStates = 4;
+        
+        const elFox = document.getElementById('stage-fox');
+        const elPen = document.getElementById('stage-pen');
+        const elLetter = document.getElementById('stage-letter');
+        const elSlideshow = document.getElementById('slideshow-container');
+        const guideText = document.getElementById('guide-text');
+        const mainTitle = document.getElementById('main-title');
+
+        // Lắng nghe sự kiện Click trên toàn bộ trang web
+        document.body.addEventListener('click', () => {
+            currentState++;
+            
+            if (currentState === 1) {
+                // Sang State 1: Hiện Bút Cà rốt, Phát nhạc
+                elFox.classList.remove('active');
+                elPen.classList.add('active');
+                guideText.innerHTML = "Có một bức thư gửi cho em này...";
+                setupAndPlayAudio(); 
+            } 
+            else if (currentState === 2) {
+                // Sang State 2: Hiện Bức thư
+                elPen.classList.remove('active');
+                elLetter.classList.add('active');
+                mainTitle.style.opacity = '0'; // Ẩn Title để nhường chỗ cho Thư
+                guideText.innerHTML = "Đọc kỹ nhé <span class='highlight'>❤️</span>";
+            }
+            else if (currentState === 3) {
+                // Sang State 3: Chạy Slideshow ảnh
+                elLetter.classList.remove('active');
+                elSlideshow.classList.add('active');
+                mainTitle.style.opacity = '1'; 
+                guideText.innerHTML = "Hải Vân nhà anh xinh nhất hệ mặt trời ✨";
+                startSlideshow();
+            }
+            else if (currentState >= totalStates) {
+                // Vòng lặp: Quay lại Cáo
+                currentState = 0;
+                elSlideshow.classList.remove('active');
+                elFox.classList.add('active');
+                guideText.innerHTML = "Chúc embe nhà anh có một mùa Valentine hạnh phúc bên tiểu mặt trời ✨";
+                stopSlideshow();
+            }
+        });
+
+        // ----------------------------------------------------
+        // 2. SLIDESHOW TỰ ĐỘNG CHẠY
+        // ----------------------------------------------------
+        let slideIndex = 0;
+        let slideInterval;
+        const slides = document.querySelectorAll('.slide-img');
+
+        function startSlideshow() {
+            slideIndex = 0;
+            slides.forEach(s => s.className = 'slide-img'); // Reset toàn bộ
+            slides[0].classList.add('active');
+            
+            // Tự động chuyển ảnh mỗi 3.5 giây
+            slideInterval = setInterval(() => {
+                slides[slideIndex].classList.remove('active');
+                slides[slideIndex].classList.add('prev'); // Đẩy ảnh cũ ra sau
+                
+                slideIndex++;
+                if (slideIndex >= slides.length) slideIndex = 0;
+                
+                slides[slideIndex].classList.remove('prev');
+                slides[slideIndex].classList.add('active');
+            }, 3500);
+        }
+
+        function stopSlideshow() {
+            clearInterval(slideInterval);
+        }
+
+        // ----------------------------------------------------
+        // 3. ÂM THANH & SÓNG NHẠC (VISUALIZER)
+        // ----------------------------------------------------
+        let audioCtx, analyser, source, dataArray;
+        const audio = document.getElementById('audio-bg');
+        const visCanvas = document.getElementById('visualizer-canvas');
+        const visCtx = visCanvas.getContext('2d');
+        let isAudioInit = false;
+
+        function setupAndPlayAudio() {
+            // Phát nhạc trực tiếp, bỏ qua việc vẽ sóng nhạc để tránh lỗi bảo mật Offline
+            audio.play().catch(e => console.log("Lỗi phát nhạc:", e));
+            
+            // Ẩn luôn thẻ canvas vẽ sóng nhạc cho gọn
+            document.getElementById('visualizer-canvas').style.display = 'none';
+        }
+
+        window.addEventListener('resize', resizeVisualizer);
+        function resizeVisualizer() {
+            visCanvas.width = window.innerWidth;
+            visCanvas.height = 80;
+        }
+
+        function drawVisualizer() {
+            requestAnimationFrame(drawVisualizer);
+            if (!isAudioInit || audio.paused) return;
+
+            analyser.getByteFrequencyData(dataArray);
+            visCtx.clearRect(0, 0, visCanvas.width, visCanvas.height);
+            
+            const barWidth = (visCanvas.width / dataArray.length) * 2.5;
+            let x = 0;
+            const centerY = visCanvas.height; // Vẽ từ dưới lên
+            
+            for (let i = 0; i < dataArray.length; i += 2) {
+                const barHeight = (dataArray[i] / 255) * visCanvas.height * 0.8;
+                // Màu gradient từ hồng nhạt đến tím
+                const r = 255; const g = 150 + (i * 0.5); const b = 200;
+                visCtx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
+                
+                // Vẽ đối xứng 2 bên từ giữa màn hình ra
+                visCtx.fillRect(visCanvas.width / 2 + x, centerY - barHeight, barWidth - 1, barHeight);
+                visCtx.fillRect(visCanvas.width / 2 - x - barWidth, centerY - barHeight, barWidth - 1, barHeight);
+                x += barWidth;
+            }
+        }
+
+        // ----------------------------------------------------
+        // 4. HIỆU ỨNG HẠT BỤI SAO (NỀN CANVAS)
+        // ----------------------------------------------------
+        const starCanvas = document.getElementById('stars-canvas');
+        const ctx = starCanvas.getContext('2d');
+        let particlesArray;
+
+        starCanvas.width = window.innerWidth;
+        starCanvas.height = window.innerHeight;
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * starCanvas.width;
+                this.y = Math.random() * starCanvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedY = Math.random() * -0.5 - 0.2; // Bay lên trên
+                this.speedX = (Math.random() - 0.5) * 0.4;
+                this.opacity = Math.random() * 0.5 + 0.2;
+            }
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX;
+                if (this.y < 0) { // Nếu bay qua màn hình thì reset xuống dưới
+                    this.y = starCanvas.height;
+                    this.x = Math.random() * starCanvas.width;
+                }
+            }
+            draw() {
+                ctx.fillStyle = `rgba(255, 202, 229, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initStars() {
+            particlesArray = [];
+            for (let i = 0; i < 150; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
+
+        function animateStars() {
+            ctx.clearRect(0, 0, starCanvas.width, starCanvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+            }
+            requestAnimationFrame(animateStars);
+        }
+
+        window.addEventListener('resize', () => {
+            starCanvas.width = window.innerWidth;
+            starCanvas.height = window.innerHeight;
+            initStars();
+        });
+
+        initStars();
+        animateStars();
+    </script>
+</body>
+</html>
